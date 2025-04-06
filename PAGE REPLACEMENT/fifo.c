@@ -1,4 +1,4 @@
-//FCFS
+//FIFO
 #include<stdio.h>
 void main(){
     int n,pages[20],numframe,frame[10],i,j=0,k,available,pagefault=0;
