@@ -1,104 +1,77 @@
 #include <stdio.h>
 
-struct process {
-    int id, Bt, tBt, Wt, Tat;
-} p[20];
-
-// Structure to store Gantt chart entries
-struct gantt_entry {
-    int process_id;
-    int start_time;
-    int end_time;
-} gantt[100];  // Assuming maximum 100 time slots
-
-int main() {
-    int i, n, tq;
-    int x = 0, y = 0;  // x = current time, y = completed processes
-    int gantt_size = 0;  // Track number of entries in Gantt chart
-    float avgwt = 0, avgtat = 0;
-
-    printf("Enter the number of processes: ");
+void main() {
+    int n, tq, i, total_time = 0, remaining;
+    printf("Enter number of processes: ");
     scanf("%d", &n);
-    
+
+    int bt[n], wt[n], tat[n], pid[n], remaining_bt[n];
+
     for (i = 0; i < n; i++) {
-        printf("\nEnter the Process ID and Burst Time of P-%d: ", i + 1);
-        scanf("%d%d", &p[i].id, &p[i].Bt);
-        p[i].tBt = p[i].Bt;
-        p[i].Wt = 0;
-        p[i].Tat = 0;
+        printf("Enter Process ID and Burst Time for Process %d: ", i + 1);
+        scanf("%d %d", &pid[i], &bt[i]);
+        remaining_bt[i] = bt[i]; // Copy burst time for processing
+        wt[i] = tat[i] = 0; // Initialize waiting & turnaround times
     }
-    
-    printf("Enter the Time Quantum: ");
+
+    printf("Enter Time Quantum: ");
     scanf("%d", &tq);
 
-    i = 0;  // Current process index
-    while (y < n) { // Continue until all processes are completed
-        if (p[i].Bt > 0) {
-            // Store start time for Gantt chart
-            gantt[gantt_size].process_id = p[i].id;
-            gantt[gantt_size].start_time = x;
+    remaining = n; // Number of remaining processes
 
-            if (p[i].Bt > tq) {
-                p[i].Bt -= tq;
-                x += tq;
-            } else {
-                x += p[i].Bt;
-                p[i].Bt = 0;
-                p[i].Tat = x;  // Completion time
-                p[i].Wt = p[i].Tat - p[i].tBt; // Waiting time
-                y++;  // Process completed
+    int gantt_pid[100], gantt_time[100], index = 0; // To store Gantt Chart entries
+
+    i = 0; 
+    gantt_time[index++] = 0; // Start time
+    while (remaining > 0) { 
+        if (remaining_bt[i] > 0) { 
+            gantt_pid[index - 1] = pid[i]; // Store process ID in Gantt chart
+
+            if (remaining_bt[i] > tq) {
+                total_time += tq;
+                remaining_bt[i] -= tq;
+            } else { 
+                total_time += remaining_bt[i]; 
+                tat[i] = total_time; // Completion time
+                wt[i] = tat[i] - bt[i]; // Waiting time
+                remaining_bt[i] = 0; 
+                remaining--; // Process finished
             }
 
-            // Store end time for Gantt chart
-            gantt[gantt_size].end_time = x;
-            gantt_size++;
+            gantt_time[index++] = total_time; // Store time in Gantt chart
         }
-        
-        i = (i + 1) % n;  // Move to the next process in a circular manner
+        i = (i + 1) % n; // Move in round-robin order
     }
-
-    // Print process details
-    printf("\nPROCESS ID\tBURST TIME\tWAITING TIME\tTURNAROUND TIME\n");
-    printf("----------------------------------------------------------\n");
-    
-    for (i = 0; i < n; i++) {
-        printf("%-10d\t%-10d\t%-12d\t%-15d\n", 
-               p[i].id, p[i].tBt, p[i].Wt, p[i].Tat);
-        avgwt += p[i].Wt;
-        avgtat += p[i].Tat;
-    }
-    
-    printf("\nAVERAGE WAITING TIME: %.2f", avgwt / n);
-    printf("\nAVERAGE TURNAROUND TIME: %.2f\n", avgtat / n);
 
     // Print Gantt Chart
-    printf("\nGANTT CHART\n");
-    printf("------------\n\n");
-
-    // Print upper border
-    printf(" ");
-    for (i = 0; i < gantt_size; i++) {
-        printf("-----");
+    printf("\nGANTT CHART:\n ");
+    for (i = 0; i < index - 1; i++) {
+        printf("--------");
     }
     printf("\n|");
-
-    // Print process IDs in the Gantt chart
-    for (i = 0; i < gantt_size; i++) {
-        printf(" P%d |", gantt[i].process_id);
+    for (i = 0; i < index - 1; i++) {
+        printf("  P%d  |", gantt_pid[i]);
     }
-
-    // Print lower border
     printf("\n ");
-    for (i = 0; i < gantt_size; i++) {
-        printf("-----");
+    for (i = 0; i < index - 1; i++) {
+        printf("--------");
     }
 
-    // Print timeline
-    printf("\n%d", gantt[0].start_time);
-    for (i = 0; i < gantt_size; i++) {
-        printf("    %d", gantt[i].end_time);
+    printf("\n");
+    for (i = 0; i < index; i++) {
+        printf("%d\t", gantt_time[i]);
     }
     printf("\n");
 
-    return 0;
+    // Print process details
+    float avgwt = 0, avgtat = 0;
+    printf("\nPROCESS\tBURST TIME\tWAITING TIME\tTURNAROUND TIME\n");
+    for (i = 0; i < n; i++) {
+        printf("%d\t\t%d\t\t%d\t\t%d\n", pid[i], bt[i], wt[i], tat[i]);
+        avgwt += wt[i];
+        avgtat += tat[i];
+    }
+
+    printf("\nAverage Waiting Time: %.2f\n", avgwt / n);
+    printf("Average Turnaround Time: %.2f\n", avgtat / n);
 }
